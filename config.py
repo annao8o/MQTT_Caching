@@ -12,5 +12,10 @@ arrival_rate = 10
 zipf_param = 0.7
 end_time = 24*60*60
 
-env_path = 'save/'
-env_name = ''
+gamma =
+
+algo_lst = ["proposed", "optimal", "random", "no_caching", "no_distribution"]
+
+file_path = 'save/'
+file_name = ''
+

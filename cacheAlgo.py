@@ -4,6 +4,8 @@ import numpy as np
 class CacheAlgo:
     def __init__(self, name, num_brk, num_top):
         self.name = name
+        self.num_top = num_top
+        self.num_broker = num_brk
         self.caching_map = np.zeros((num_brk, num_top), dtype=np.bool_)
 
     def caching(self):
@@ -19,12 +21,12 @@ class CacheAlgo:
 
 
     def proposed_caching(self):
-        # self.caching_map
-        brk.sub_lst
-        brk.top_lst
-        # sort the topic with lambda k in descending order
-        top_lst = top_lst.sort...
-        for top in top_lst:
+        topic_lst = ist()
+        for top in self.top_lst:
+            topic_lst.append((top, top.popularity))
+        # sort the topics with popularity in descending order
+        topic_lst.sort(key=lambda x: x[1], reverse=True)
+        for (t, p) in topic_lst:
             avail, avail_svr = self.isFull()
             if avail is False:
                 break
@@ -37,6 +39,10 @@ class CacheAlgo:
                     min_broker = brk
             self.data_store(min_broker, top)
 
+        return
+
+    # eta 만큼 update
+    def update_cache(self):
 
         return
 
@@ -52,13 +58,44 @@ class CacheAlgo:
         return
 
 
-    def calc_traffic(self, broker, topic):
-        ex_input =
-        ex_output =
-        in_output =
-        in_input =
+    def calc_total_traffic(self, broker, topic):
+        ex_input = ex_output = in_output = in_input = 0
+        tmp_caching_map = self.caching_map.copy()
+        tmp_caching_map[broker][topic] = True
+
+        for b in range(self.num_broker):
+            for k in range(self.num_top):
+                ex_input += self.calc_ex_input(b,k)
+                ex_output += self.calc_ex_output(b,k)
+                in_output += self.calc_in_output(b,k)
+                in_input += self.calc_in_input(b,k)
+
+        total_traffic = ex_input + ex_output + in_output + in_input
 
         return total_traffic
+
+    def calc_ex_input(self, broker, topic):
+
+
+        return
+
+
+    def calc_ex_output(self, broker, topic):
+
+
+        return
+
+
+    def calc_in_output(self, broker, topic):
+
+
+        return
+
+
+    def calc_in_input(self, broker, topic):
+
+
+        return
 
 
     def isFull(self):

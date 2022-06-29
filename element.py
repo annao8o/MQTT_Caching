@@ -10,8 +10,9 @@ class MsgType(Enum):
 
 
 class Topic:    # topic = publisher
-    def __init__(self, id):
+    def __init__(self, id, popularity):
         self.id = id
+        self.popularity = popularity
         self.connected_svr = None
 
     def set_svr(self, svr):

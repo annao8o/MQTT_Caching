@@ -45,6 +45,13 @@ class Broker:
         self.in_input = 0
         self.in_output = 0
 
+    def print_info(self):
+        print(f'Broker {self.id} has {self.topic_lst} topics')
+        tmp = list()
+        for sub in self.sub_lst:
+            tmp.append((sub.id, sub.get_interest().id))
+        print(f'Broker {self.id} has {tmp} subscribers')
+
     def add_topic(self,top):    # top: int
         self.topic_lst.append(top)
 
@@ -79,12 +86,17 @@ class Broker:
 
     def fetch(self):
         self.ex_input += 1
+        print("fetching")
+
 
     def forward(self, req):
         self.ex_output += 1
+        print("forwarding")
         req.change_status("end")
 
+
     def routing(self, target_brk):
+        print("route to ", target_brk.id)
         target_brk.rcv_traffic(self)
         self.in_output += 1
 

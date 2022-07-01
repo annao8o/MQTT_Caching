@@ -1,6 +1,7 @@
 import numpy as np
 from config import *
 import copy
+from itertools import combinations
 
 
 class CacheAlgo:
@@ -41,21 +42,30 @@ class CacheAlgo:
             # print(avail_svr)
             if len(avail_svr) == 0:
                 break
-            traffic = 0
             min_traffic = float('inf')
-            min_broker = None
-            # combi = list()
-            # for n in range(len(avail_svr)):
-            #     combi.append(list(combinations(avail_svr, n+1)))
+            min_brk_set = None
+            for n in range(len(avail_svr)):
+                combi = list(combinations(avail_svr, n+1))
+                for brk_set in combi:
+                    traffic = self.calc_total_traffic(brk_set, t.id)
+                    if traffic < min_traffic:
+                        min_traffic = traffic
+                        min_brk_set = brk_set
+            # print("algorithm: ", self.name, "topic: ", t.id, "min comb: ", min_brk_set)
+            self.data_store(min_brk_set, t.id)
 
-            for brk in avail_svr:
-                # print("avail: ", avail_svr, "brk : ", brk)
-                traffic = self.calc_total_traffic(brk, t.id)
-                # print("broker: ", brk, "curr_traffic:", traffic, "min_traffic: ", min_traffic)
-                if traffic < min_traffic:
-                    min_traffic = traffic
-                    min_broker = brk
-            self.data_store(min_broker, t.id)
+
+            # # for c in combi:
+            # #     for idx in c:
+            #
+            # for brk in avail_svr:
+            #     # print("avail: ", avail_svr, "brk : ", brk)
+            #     traffic = self.calc_total_traffic(brk, t.id)
+            #     # print("broker: ", brk, "curr_traffic:", traffic, "min_traffic: ", min_traffic)
+            #     if traffic < min_traffic:
+            #         min_traffic = traffic
+            #         min_broker = brk
+            # self.data_store(min_broker, t.id)
 
 
     def optimal_caching(self):  #brute force
@@ -63,17 +73,29 @@ class CacheAlgo:
             avail_svr = self.isFull()
             if len(avail_svr) == 0:
                 break
-            temp = np.zeros((num_broker, num_topic), dtype=np.float_)
-            traffic = 0
             min_traffic = float('inf')
             min_set = (None,None)
             for top in self.env.top_lst:
-                for brk in avail_svr:
-                    traffic = self.calc_total_traffic(brk, top.id)
-                    if (traffic < min_traffic) and (self.caching_map[brk][top.id] != True):
-                        min_traffic = traffic
-                        min_set = (brk, top.id)
+                for n in range(len(avail_svr)):
+                    combi = list(combinations(avail_svr, n + 1))
+                    for brk_set in combi:
+                        traffic = self.calc_total_traffic(brk_set, top.id)
+                        # print("current: ", top.id, brk_set, traffic)
+                        # print("min: ", min_set, min_traffic)
+                        if traffic < min_traffic:
+                            min_traffic = traffic
+                            min_brk_set = brk_set
+                            min_set = (min_brk_set, top.id)
+            # print("algorithm: ", self.name, " topic: ", min_set[1], " min comb: ", min_set[0])
             self.data_store(min_set[0], min_set[1])
+
+            # for top in self.env.top_lst:
+            #     for brk in avail_svr:
+            #         traffic = self.calc_total_traffic(brk, top.id)
+            #         if (traffic < min_traffic) and (self.caching_map[brk][top.id] != True):
+            #             min_traffic = traffic
+            #             min_set = (brk, top.id)
+            # self.data_store(min_set[0], min_set[1])
 
 
             # for top in self.env.top_lst:  #topic: obj
@@ -98,11 +120,15 @@ class CacheAlgo:
         return
 
 
-    def calc_total_traffic(self, broker, topic):
-        ex_input = ex_output = in_output = in_input = 0
+    def calc_total_traffic(self, broker_set, topic):
         # print(self.caching_map.copy())
         tmp_caching_map = copy.deepcopy(self.caching_map)
-        tmp_caching_map[broker][topic] = True
+        if type(broker_set) == tuple:
+            for broker in broker_set:
+                tmp_caching_map[broker][topic] = True
+        elif type(broker_set) == int:
+            tmp_caching_map[broker_set][topic] = True
+
         # print(broker, topic, tmp_caching_map)
 
         ex_input_result = ex_output_result = in_output_result = in_input_result = 0
@@ -154,18 +180,26 @@ class CacheAlgo:
                     tmp_map[broker][topic] + (1 - tmp_map[broker][topic]) * self.env.asso_map[broker][topic]))
 
 
-    def data_store(self, svr, item):
-        if type(item) == np.ndarray:
-            self.caching_map[svr] = item
-        elif type(item) == int:
-            self.caching_map[svr][item] = True
-        elif type(item) == list:
-            for i in item:
-                self.caching_map[svr][i] = True
-        else:
-            raise Exception("type error in func data_store(): data must be integer or list.")
-        self.remain_capacity[svr] -= data_size
-        # print(f'caching {item} in {svr}, {self.caching_map}')
+    def data_store(self, broker_set, topic):
+        if type(broker_set) == tuple:
+            for broker in broker_set:
+                self.caching_map[broker][topic] = True
+                self.remain_capacity[broker] -= data_size
+        elif type(broker_set) == int:
+            self.caching_map[broker_set][topic] = True
+            self.remain_capacity[broker_set] -= data_size
+
+        # if type(item) == np.ndarray:
+        #     self.caching_map[svr] = item
+        # elif type(item) == int:
+        #     self.caching_map[svr][item] = True
+        # elif type(item) == list:
+        #     for i in item:
+        #         self.caching_map[svr][i] = True
+        # else:
+        #     raise Exception("type error in func data_store(): data must be integer or list.")
+        # self.remain_capacity[svr] -= data_size
+        # # print(f'caching {item} in {svr}, {self.caching_map}')
 
 
     def process_req(self, req):     #req=(time, broker, topic)
@@ -176,6 +210,7 @@ class CacheAlgo:
         delay = 0
 
         ex_input = ex_output = in_input = in_output = 0
+        print(f'algorithm: {self.name}// request for {req_top.id} arrives {req_brk.id}')
 
         if len(cached_svr) != 0:  # If the requested topic is cached in one of the brokers
             hit = 1
@@ -189,7 +224,8 @@ class CacheAlgo:
 
         else:   # If the requested topic is not cached in any broker
             hit = 0
-            if req_top.get_svr() == topic_svr:
+            print(req_top.id, "is cached in ", req_top.get_svr().id)
+            if req_brk.id == topic_svr.id:
                 req_brk.fetch()
                 req_brk.forward(req)
             else:

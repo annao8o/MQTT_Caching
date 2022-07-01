@@ -24,6 +24,9 @@ def run(integrated_file, algo_lst):
     for algo in algo_lst:
         env.add_algo(CacheAlgo(algo, env))
 
+    for brk in env.brk_lst:
+        brk.print_info()
+
     ex_input_result = [0 for _ in range(len(algo_lst))]
     ex_output_result = [0 for _ in range(len(algo_lst))]
     in_input_result = [0 for _ in range(len(algo_lst))]

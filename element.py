@@ -10,10 +10,16 @@ class MsgType(Enum):
 
 
 class Topic:    # topic = publisher
-    def __init__(self, id, popularity):
+    def __init__(self, id):
         self.id = id
-        self.popularity = popularity
+        self.popularity = 0
         self.connected_svr = None
+
+    def set_popularity(self, popularity):
+        self.popularity = popularity
+
+    def get_popularity(self):
+        return self.popularity
 
     def set_svr(self, svr):
         self.connected_svr = svr
@@ -31,20 +37,20 @@ class Broker:
         self.topic_lst = list()
         self.ex_traffic = 0
         self.in_traffic = 0
-        self.load = 0
 
     def add_topic(self,top):    # top: int
         self.topic_lst.append(top)
 
-    def add_subscriber(self, sub):  # sub: obj
+    def add_subscriber(self, sub):  # sub: int
         self.sub_lst.append(sub)
-        sub.connect_broker(self)
-
-    def set_load(self):
-        self.load += 1
+        #sub.connect_broker(self)
 
     def get_load(self):
-        return self.load
+        # print(len(self.sub_lst))
+        if len(self.sub_lst) == 0:
+            return 0
+        else:
+            return len(self.sub_lst)
 
     # def process_req(self, top):
     #     if self.isContain(top):
@@ -70,9 +76,9 @@ class Broker:
 
 
 class Subscriber:
-    def __init__(self, id, interest):
+    def __init__(self, id):
         self.id = id
-        self.interest = interest
+        #self.interest = interest
         self.conn_brk = None
 
     def connect_broker(self, brk):

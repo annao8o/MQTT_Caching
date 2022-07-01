@@ -1,21 +1,21 @@
 import random
 import math
 
-num_topic = 1000
-num_sub = 1
-num_broker = (1, 20)
-cache_size =    #message
-data_size =     #message
+num_topic = 20
+num_sub = 20
+num_broker = 3
+cache_size = 5   #message
+data_size = 1   #message
 
-update_rate =
-arrival_rate = 10
+update_rate = 0.01   #per seconds
+arrival_rate = 10   #per seconds
 zipf_param = 0.7
-end_time = 24*60*60
+end_time = 1000
 
-gamma =
+gamma = 1.1
 
-algo_lst = ["proposed", "optimal", "random", "no_caching", "no_distribution"]
+algo_lst = ["proposed", "optimal", "random", "no_caching"]
 
 file_path = 'save/'
-file_name = ''
+file_name = 'test_file.bin'
 

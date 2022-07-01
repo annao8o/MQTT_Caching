@@ -1,25 +1,24 @@
 import numpy as np
 import random
-from element import Broker
+from element import Broker, Subscriber
 import math
 from config import *
 
 class Environment:   # load balancer
-    def __init__(self, requests, end_time, num_client, num_broker, cache_size, arrival_rate, top_lst):
-        self.num_broker = num_broker
-
-        self.brk_lst = list()
-        self.client_lst = list()
-        self.associate_map = np.zeros((num_client, num_broker), dtype=np.bool_)
-        self.total_load = 0
-        self.curr_t = 0
-        self.end_time = end_time
+    def __init__(self, requests, top_lst, sub_lst):
         self.top_lst = top_lst
+        self.brk_lst = list()
+        self.client_lst = sub_lst
         self.algo_lst = list()
 
+        self.asso_map = np.zeros((num_broker, num_topic), dtype=np.bool_)
+        self.lambda_map = np.zeros(num_topic, dtype=np.float_)
+        self.total_load = 0
+        self.total_req = 0
+
+        self.curr_t = 0
         self.requests = requests
         self.curr_req = list()
-        self.arrival_rate = arrival_rate
 
         self.create_env(cache_size)
 
@@ -28,7 +27,8 @@ class Environment:   # load balancer
         print("create environment..")
 
         # generate the brokers
-        self.brk_lst = [Broker(i, cache_size, len(self.top_lst), self) for i in range(self.num_broker)]
+        self.brk_lst = [Broker(i, cache_size, len(self.top_lst), self) for i in range(num_broker)]
+        self.client_lst = [Subscriber(i) for i in range(num_sub)]
 
         # assign a topic(publisher) to a broker
         self.assign_top()
@@ -36,12 +36,16 @@ class Environment:   # load balancer
         # assign the subscribers to the brokers
         self.match_sub_broker(self.client_lst)
 
+        for top in self.top_lst:
+            self.lambda_map[top.id] = arrival_rate * top.popularity
 
     def assign_top(self):
-        assign_lst = random.uniform(1, self.num_broker, size=len(self.top_lst))
+        assign_lst = np.random.uniform(0, num_broker, size=num_topic)
         for top, brk in enumerate(assign_lst):
             brk = math.trunc(brk)
-            brk.add_topic(top)
+            self.brk_lst[brk].add_topic(top)
+            self.asso_map[brk][top] = True
+            self.top_lst[top].set_svr(self.brk_lst[brk])
 
         # for k in self.top_lst:
         #     assign = False
@@ -52,19 +56,16 @@ class Environment:   # load balancer
         #             assign = True
 
     def match_sub_broker(self, sub):
-        if type(sub) == list():
-            for s in sub:
-                brk = self.brk_lst[random.randint()]
-                if self.check_load(brk):
-                    brk.add_subscriber(s)
-        else:
-            brk = self.brk_lst[random.randint()]
+        for s in sub:
+            brk = self.brk_lst[random.randrange(num_broker)]
+            self.total_load += 1
             if self.check_load(brk):
-                brk.add_subscriber(sub)
+                brk.add_subscriber(s)
+                # print((brk, s))
 
 
     def check_load(self, brk):
-        return brk.get_load < gamma * (self.total_load / self.num_broker)
+        return brk.get_load() < gamma * (self.total_load / num_broker)
 
 
     def add_algo(self, algo):
@@ -89,10 +90,9 @@ class Environment:   # load balancer
         hit_lst = [0 for _ in range(len(self.algo_lst))]
         delay_lst = [0 for _ in range(len(self.algo_lst))]
 
-
         while self.curr_req:
             req = self.curr_req.pop(0)  # (t, svr_id, requested_top)
-            self.brk_lst[req[1]].process_req(req[2])
+            # self.brk_lst[req[1]].process_req(req[2])
             self.total_req += 1
             for idx, algo in enumerate(self.algo_lst):
                 ex_traffic, in_traffic, hit, delay = algo.process_req(req)

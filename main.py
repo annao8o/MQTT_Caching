@@ -1,5 +1,4 @@
 from config import *
-from element import Zipf
 from environment import *
 from genData import *
 from cacheAlgo import CacheAlgo
@@ -37,7 +36,7 @@ def run(integrated_file, algo_lst):
     while t <= end_time:
         env.load_curr_request(t)
 
-        ex_traffic_lst, in_traffic_lst, hit_lst, delay_lst = env.requests()
+        ex_traffic_lst, in_traffic_lst, hit_lst, delay_lst = env.request()
         for i in range(len(algo_lst)):
             ex_traffic_result[i] += ex_traffic_lst[i]
             in_traffic_result[i] += in_traffic_lst[i]
@@ -46,8 +45,8 @@ def run(integrated_file, algo_lst):
 
         t += 1
 
-    result = {f'total_request: {env.total_requests}, ex_traffic: {ex_traffic_result}, in_traffic: {in_traffic_result}, hit_count: {hit_result}, '
-              f'total_delay: {delay_result}, total_traffic: {np.array(a) + np.array(b)}, hit_ratio: {np.array(hit_result) / env.total_request}'}
+    result = {f'total_request: {env.total_req}, ex_traffic: {ex_traffic_result}, in_traffic: {in_traffic_result}, hit_count: {hit_result}, '
+              f'total_delay: {delay_result}, total_traffic: {np.array(ex_traffic_result) + np.array(in_traffic_result)}, hit_ratio: {np.array(hit_result) / env.total_req}'}
     print(result)
 
 if __name__ == "__main__":
@@ -60,13 +59,14 @@ if __name__ == "__main__":
         integrated_file = load_file(file_path, file_name)
 
     else:
-        top_list = make_topic(num_topic)
         zipf = Zipf()
         zipf.set_env(zipf_param, num_topic)
+        top_list = make_topic(num_topic, zipf)
+        sub_list = make_subsriber(num_sub, top_list, zipf)
+        env = Environment(requests, top_list, sub_list)
         requests = make_request(num_broker, arrival_rate, end_time, zipf, top_list)
-        env = Environment(requests, end_time, num_broker, cache_size, arrival_rate, top_list)
-        integrated_file = {'topic_list': top_list, 'requests': requests, 'zipf': zipf, 'environment': env}
 
+        integrated_file = {'topic_list': top_list, 'requests': requests, 'zipf': zipf, 'environment': env}
         save_file(file_path, file_name, integrated_file)
 
     run(integrated_file, algo_lst)

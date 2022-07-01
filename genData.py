@@ -1,15 +1,26 @@
-from element import Topic
+from element import Topic, Subscriber
 import numpy as np
+import random
 
-def make_topic(num_top):
+def make_topic(num_top, zipf):
     topic_lst = list()
 
     for k in range(num_top):
         topic = Topic(k)
         topic_lst.append(topic)
+        topic.set_popularity(zipf.pdf[k])
 
     return topic_lst
 
+def make_subsriber(num_sub, top_lst, zipf):
+    sub_list = list()
+
+    sub_list = [Subscriber(i) for i in range(num_sub)]
+    interest_lst = top_lst[zipf.get_sample(size=num_sub)]
+    for sub in sub_list:
+        sub.set_interest(interest_lst[sub.id])
+
+    return sub_list
 
 def make_request(num_brk, arrival, end_time, zipf, top_lst):
     requests = list()
@@ -18,8 +29,11 @@ def make_request(num_brk, arrival, end_time, zipf, top_lst):
 
     while t < end_time:
         req_num = np.random.poisson(arrival, size=num_brk)
-        for ...
-
+        for brk_idx in range(num_brk):
+            if req_num[brk_idx] != 0:
+                for _ in range(req_num[brk_idx]):
+                    requests.append((t, brk_idx, top_lst[zipf.get_sample()]))
+        t += 1
     requests.sort(key=lambda  x: x[0])  #time
 
     return requests

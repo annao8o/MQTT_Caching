@@ -1,15 +1,16 @@
 import numpy as np
 import random
-from element import Broker, Subscriber
+from element import Broker, Subscriber, Topic
 import math
 from config import *
 
 class Environment:   # load balancer
-    def __init__(self, requests, top_lst, sub_lst):
-        self.top_lst = top_lst
+    def __init__(self, zipf):
+        self.top_lst = list()
         self.brk_lst = list()
-        self.client_lst = sub_lst
+        self.sub_lst = list()
         self.algo_lst = list()
+        self.zipf = zipf
 
         self.asso_map = np.zeros((num_broker, num_topic), dtype=np.bool_)
         self.lambda_map = np.zeros(num_topic, dtype=np.float_)
@@ -17,27 +18,52 @@ class Environment:   # load balancer
         self.total_req = 0
 
         self.curr_t = 0
-        self.requests = requests
+        self.requests = None
         self.curr_req = list()
 
         self.create_env(cache_size)
 
-
     def create_env(self, cache_size):
         print("create environment..")
 
-        # generate the brokers
+        # generate topics, subscribers, brokers
+        self.top_lst = self.make_topic(num_topic, self.zipf)
+        print("generate topics")
+
+        self.sub_lst = self.make_subsriber(num_sub, self.top_lst, self.zipf)
+        print("generate subscribers")
+
         self.brk_lst = [Broker(i, cache_size, len(self.top_lst), self) for i in range(num_broker)]
-        self.client_lst = [Subscriber(i) for i in range(num_sub)]
+        print("generate brokers")
 
         # assign a topic(publisher) to a broker
         self.assign_top()
 
         # assign the subscribers to the brokers
-        self.match_sub_broker(self.client_lst)
+        self.match_sub_broker(self.sub_lst)
 
         for top in self.top_lst:
             self.lambda_map[top.id] = arrival_rate * top.popularity
+
+
+    def make_topic(self, num_top, zipf):
+        topic_lst = list()
+
+        for k in range(num_top):
+            topic = Topic(k)
+            topic_lst.append(topic)
+            topic.set_popularity(zipf.pdf[k])
+
+        return topic_lst
+
+
+    def make_subsriber(self, num_sub, top_lst, zipf):
+        sub_list = [Subscriber(i) for i in range(num_sub)]
+        interest_lst = [top_lst[i] for i in (zipf.get_sample(size=num_sub))]
+        for sub in sub_list:
+            sub.set_interest(interest_lst[sub.id])
+
+        return sub_list
 
     def assign_top(self):
         assign_lst = np.random.uniform(0, num_broker, size=num_topic)
@@ -47,13 +73,6 @@ class Environment:   # load balancer
             self.asso_map[brk][top] = True
             self.top_lst[top].set_svr(self.brk_lst[brk])
 
-        # for k in self.top_lst:
-        #     assign = False
-        #     while assign:
-        #         brk = self.brk_lst[random.randint()]
-        #         if brk.num_top <= len(self.top_lst) / self.num_broker:
-        #             brk.add_topic(k)
-        #             assign = True
 
     def match_sub_broker(self, sub):
         for s in sub:
@@ -61,12 +80,13 @@ class Environment:   # load balancer
             self.total_load += 1
             if self.check_load(brk):
                 brk.add_subscriber(s)
-                # print((brk, s))
 
 
     def check_load(self, brk):
         return brk.get_load() < gamma * (self.total_load / num_broker)
 
+    def set_requests(self, requests):
+        self.requests = requests
 
     def add_algo(self, algo):
         if type(algo).__name__ == 'CacheAlgo':

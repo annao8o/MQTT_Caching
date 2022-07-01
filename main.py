@@ -61,12 +61,11 @@ if __name__ == "__main__":
     else:
         zipf = Zipf()
         zipf.set_env(zipf_param, num_topic)
-        top_list = make_topic(num_topic, zipf)
-        sub_list = make_subsriber(num_sub, top_list, zipf)
-        env = Environment(requests, top_list, sub_list)
-        requests = make_request(num_broker, arrival_rate, end_time, zipf, top_list)
+        env = Environment(zipf)
+        requests = make_request(num_broker, arrival_rate, end_time, zipf, env.top_lst, env.sub_lst, env.brk_lst)
+        env.set_requests(requests)
 
-        integrated_file = {'topic_list': top_list, 'requests': requests, 'zipf': zipf, 'environment': env}
+        integrated_file = {'requests': requests, 'zipf': zipf, 'environment': env}
         save_file(file_path, file_name, integrated_file)
 
     run(integrated_file, algo_lst)

@@ -2,12 +2,6 @@ import numpy as np
 import random
 from enum import Enum, auto
 
-class MsgType(Enum):
-    ex_input = auto()
-    ex_output = auto()
-    in_input = auto()
-    in_output = auto()
-
 
 class Topic:    # topic = publisher
     def __init__(self, id):
@@ -64,22 +58,43 @@ class Broker:
             avail = True
         return avail
 
-    # def forward(self):
-    #     self.ex_traffic += 1
-    #     return 1
-    #
-    # def routing(self, brk):
-    #     self.in_traffic += 1
+    def make_requests(self, size):
+        req_sub = [self.sub_lst[random.randrange(len(self.sub_lst))] for _ in range(size)]
+        request = [sub.get_interest() for sub in req_sub]
 
-    # def rcv_traffic(self, msg):
+        return request
+
+
+    def forward(self):
+        self.ex_output += 1
+
+
+    def routing(self, target_brk):
+        target_brk.rcv_traffic(self)
+        self.in_output += 1
+
+
+    def rcv_traffic(self, brk):
+        self.in_input += 1
+
+
+    def clear(self):
+        self.ex_output = self.ex_input = self.in_output = self.in_input = 0
+
 
 
 
 class Subscriber:
     def __init__(self, id):
         self.id = id
-        #self.interest = interest
+        self.interest = None
         self.conn_brk = None
+
+    def set_interest(self, topic):
+        self.interest = topic
+
+    def get_interest(self):
+        return self.interest
 
     def connect_broker(self, brk):
         self.conn_brk = brk

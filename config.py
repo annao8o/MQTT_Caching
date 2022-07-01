@@ -1,10 +1,10 @@
 import random
 import math
 
-num_topic = 100
-num_sub = 1000
+num_topic = 20
+num_sub = 100
 num_broker = 3
-cache_size = 20   #message
+cache_size = 5   #message
 data_size = 1   #message
 
 update_rate = 0.01   #per seconds
@@ -17,5 +17,5 @@ gamma = 1.1
 algo_lst = ["proposed", "optimal", "random", "no_caching"]
 
 file_path = 'save/'
-file_name = 'test_file_tmp2.bin'
+file_name = 'simple_test.bin'
 

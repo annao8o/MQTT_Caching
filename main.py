@@ -24,8 +24,10 @@ def run(integrated_file, algo_lst):
     for algo in algo_lst:
         env.add_algo(CacheAlgo(algo, env))
 
-    ex_traffic_result = [0 for _ in range(len(algo_lst))]
-    in_traffic_result = [0 for _ in range(len(algo_lst))]
+    ex_input_result = [0 for _ in range(len(algo_lst))]
+    ex_output_result = [0 for _ in range(len(algo_lst))]
+    in_input_result = [0 for _ in range(len(algo_lst))]
+    in_output_result = [0 for _ in range(len(algo_lst))]
     hit_result = [0 for _ in range(len(algo_lst))]
     delay_result = [0 for _ in range(len(algo_lst))]
 
@@ -36,17 +38,21 @@ def run(integrated_file, algo_lst):
     while t <= end_time:
         env.load_curr_request(t)
 
-        ex_traffic_lst, in_traffic_lst, hit_lst, delay_lst = env.request()
+        ex_input_lst, ex_output_lst, in_input_lst, in_output_lst, hit_lst, delay_lst = env.request()
         for i in range(len(algo_lst)):
-            ex_traffic_result[i] += ex_traffic_lst[i]
-            in_traffic_result[i] += in_traffic_lst[i]
+            ex_input_result[i] += ex_input_lst[i]
+            ex_output_result[i] += ex_output_lst[i]
+            in_input_result[i] += in_input_lst[i]
+            in_output_result[i] += in_output_lst[i]
             hit_result[i] += hit_lst[i]
             delay_result[i] += delay_lst[i]
 
         t += 1
 
-    result = {f'total_request: {env.total_req}, ex_traffic: {ex_traffic_result}, in_traffic: {in_traffic_result}, hit_count: {hit_result}, '
-              f'total_delay: {delay_result}, total_traffic: {np.array(ex_traffic_result) + np.array(in_traffic_result)}, hit_ratio: {np.array(hit_result) / env.total_req}'}
+    result = {f'total_request: {env.total_req}, ex_input: {ex_input_result}, ex_output: {ex_output_result}, in_input: {in_input_result}, in_output: {in_output_result}, hit_count: {hit_result}, '
+              f'total_delay: {delay_result}, total_external: {np.array(ex_input_result) + np.array(ex_output_result)}, total_internal: {np.array(in_input_result) + np.array(in_output_result)}, '
+              f'total_traffic: {np.array(ex_input_result) + np.array(ex_output_result) + np.array(in_input_result) + np.array(in_output_result)}, '
+              f'hit_ratio: {np.array(hit_result) / env.total_req}'}
     print(result)
 
 if __name__ == "__main__":

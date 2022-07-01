@@ -1,4 +1,4 @@
-from element import Topic, Subscriber
+from element import Topic, Subscriber, Request
 import numpy as np
 import random
 
@@ -29,9 +29,9 @@ def make_request(num_brk, arrival, end_time, zipf, top_lst, sub_lst, brk_lst):
             if req_num[brk_idx] != 0:
                 req = brk_lst[brk_idx].make_requests(size=req_num[brk_idx])
                 for r in req:
-                    requests.append((t, brk_idx, r))
+                    requests.append(Request(t, brk_lst[brk_idx], r))
         t += 1
-    requests.sort(key=lambda x: x[0])  #time
+    #requests.sort(key=lambda x: x[0])  #time
 
     return requests
 

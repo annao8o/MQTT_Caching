@@ -2,6 +2,17 @@ import numpy as np
 import random
 from enum import Enum, auto
 
+class Request:
+    def __init__(self, time, broker, topic):
+        self.time = time
+        self.broker = broker
+        self.topic = topic
+        self.status = None
+
+    def change_status(self, status):
+        self.status = status
+
+
 
 class Topic:    # topic = publisher
     def __init__(self, id):
@@ -29,8 +40,10 @@ class Broker:
         self.controller = controller
         self.sub_lst = list()
         self.topic_lst = list()
-        self.ex_traffic = 0
-        self.in_traffic = 0
+        self.ex_output = 0
+        self.ex_input = 0
+        self.in_input = 0
+        self.in_output = 0
 
     def add_topic(self,top):    # top: int
         self.topic_lst.append(top)
@@ -64,10 +77,12 @@ class Broker:
 
         return request
 
+    def fetch(self):
+        self.ex_input += 1
 
-    def forward(self):
+    def forward(self, req):
         self.ex_output += 1
-
+        req.change_status("end")
 
     def routing(self, target_brk):
         target_brk.rcv_traffic(self)
@@ -75,8 +90,11 @@ class Broker:
 
 
     def rcv_traffic(self, brk):
-        self.in_input += 1
+        brk.in_input += 1
 
+
+    def get_traffic(self):
+        return self.ex_input, self.ex_output, self.in_input, self.in_output
 
     def clear(self):
         self.ex_output = self.ex_input = self.in_output = self.in_input = 0

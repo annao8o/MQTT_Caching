@@ -100,13 +100,15 @@ class Environment:   # load balancer
         self.curr_req.clear()
         self.curr_t = t
         for r in self.requests:
-            if r[0] == t:
+            if r.time == t:
                 self.curr_req.append(r)
 
 
     def request(self):
-        ex_traffic_lst = [0 for _ in range(len(self.algo_lst))]
-        in_traffic_lst = [0 for _ in range(len(self.algo_lst))]
+        ex_input_lst = [0 for _ in range(len(self.algo_lst))]
+        ex_output_lst = [0 for _ in range(len(self.algo_lst))]
+        in_input_lst = [0 for _ in range(len(self.algo_lst))]
+        in_output_lst = [0 for _ in range(len(self.algo_lst))]
         hit_lst = [0 for _ in range(len(self.algo_lst))]
         delay_lst = [0 for _ in range(len(self.algo_lst))]
 
@@ -115,12 +117,14 @@ class Environment:   # load balancer
             # self.brk_lst[req[1]].process_req(req[2])
             self.total_req += 1
             for idx, algo in enumerate(self.algo_lst):
-                ex_traffic, in_traffic, hit, delay = algo.process_req(req)
-                ex_traffic_lst[idx] += ex_traffic
-                in_traffic_lst[idx] += in_traffic
+                ex_input, ex_output, in_input, in_output, hit, delay = algo.process_req(req)
+                ex_input_lst[idx] += ex_input
+                ex_output_lst[idx] += ex_output
+                in_input_lst[idx] += in_input
+                in_output_lst[idx] += in_output
                 hit_lst[idx] += hit
                 delay_lst[idx] += delay
-        return ex_traffic_lst, in_traffic_lst, hit_lst, delay_lst
+        return ex_input_lst, ex_output_lst, in_input_lst, in_output_lst, hit_lst, delay_lst
 
 
     def caching(self):

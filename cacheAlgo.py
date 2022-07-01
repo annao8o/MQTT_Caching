@@ -36,7 +36,7 @@ class CacheAlgo:
             topic_lst.append((top, top.popularity))
         # sort the topics with popularity in descending order
         topic_lst.sort(key=lambda x: x[1], reverse=True)
-        for (t, p) in topic_lst:
+        for (t, p) in topic_lst:    # popularity 높은 것 부터.
             avail_svr = self.isFull()
             # print(avail_svr)
             if len(avail_svr) == 0:
@@ -44,6 +44,10 @@ class CacheAlgo:
             traffic = 0
             min_traffic = float('inf')
             min_broker = None
+            # combi = list()
+            # for n in range(len(avail_svr)):
+            #     combi.append(list(combinations(avail_svr, n+1)))
+
             for brk in avail_svr:
                 # print("avail: ", avail_svr, "brk : ", brk)
                 traffic = self.calc_total_traffic(brk, t.id)
@@ -164,30 +168,43 @@ class CacheAlgo:
         # print(f'caching {item} in {svr}, {self.caching_map}')
 
 
-    def process_req(self, req):     #req=(t, svr, requested_top)
-        req_brk = req[1]
-        req_top = req[2]
+    def process_req(self, req):     #req=(time, broker, topic)
+        req_brk = req.broker
+        req_top = req.topic
         cached_svr = np.where(self.caching_map[:, req_top.id] == True)[0]  # Find the brokers caching the requested topic
-        # topic_svr = np.where(self.env.asso_map[:, req_top.id] == True)[0] #Find the brokers having the requested topic
+        topic_svr = self.env.brk_lst[np.where(self.env.asso_map[:, req_top.id] == True)[0][0]] # Find the brokers having the requested topic
         delay = 0
+
+        ex_input = ex_output = in_input = in_output = 0
 
         if len(cached_svr) != 0:  # If the requested topic is cached in one of the brokers
             hit = 1
-            if req_brk in cached_svr:   # cached in the requesting broker
-                req_brk.forward(req_top)  #requesting broker the forwards the user directly
-
-            else:
-                in_traffic = req_brk.routing()
-
+            if req_brk.id in cached_svr:   # cached in the requesting broker
+                req_brk.forward(req)  #requesting broker the forwards the user directly
+            else:   # 다른 broker에 캐싱되어 있으면
+                target_brk = self.env.brk_lst[cached_svr[random.randrange(len(cached_svr))]] # target broker 설정하고
+                req_brk.routing(target_brk)    # target broker에 routing
+                target_brk.routing(req_brk)
+                req_brk.forward(req)
 
         else:   # If the requested topic is not cached in any broker
             hit = 0
-            connected_svr = req_top.get_svr()
-            if connected_svr.id == req_brk:
-                ex_traffic = 2
-                in_traffic = 0
+            if req_top.get_svr() == topic_svr:
+                req_brk.fetch()
+                req_brk.forward(req)
             else:
-                ex_traffic = 2
-                in_traffic = 2
+                req_brk.routing(topic_svr) #topic server에 routing
+                topic_svr.fetch() #topic server는 publisher로부터 data fetch
+                topic_svr.routing(req_brk)   # topic server는 Data를 requesting broker에 routing
+                req_brk.forward(req)
 
-        return ex_traffic, in_traffic, hit, delay
+        for brk in self.env.brk_lst:
+            ex_in, ex_out, in_in, in_out = brk.get_traffic()
+
+            ex_input += ex_in
+            ex_output += ex_out
+            in_input += in_in
+            in_output += in_out
+            brk.clear()
+
+        return ex_input, ex_output, in_input, in_output, hit, delay

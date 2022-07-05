@@ -43,6 +43,8 @@ def run(integrated_file, algo_lst):
 
         ex_input_lst, ex_output_lst, in_input_lst, in_output_lst, hit_lst, delay_lst = env.request()
         for i in range(len(algo_lst)):
+            if t == (1 / update_rate):
+                env.algo_lst[i].update()
             ex_input_result[i] += ex_input_lst[i]
             ex_output_result[i] += ex_output_lst[i]
             in_input_result[i] += in_input_lst[i]

@@ -3,6 +3,8 @@ from config import *
 import copy
 from itertools import combinations
 
+random.seed(1)
+
 
 class CacheAlgo:
     def __init__(self, name, env):
@@ -143,13 +145,15 @@ class CacheAlgo:
             ex_output_result = self.env.brk_lst[b].get_load() * ex_output
             in_output_result = in_output
             in_input_result = in_input
+
+        # print(ex_input_result, ex_output_result, in_output_result, in_input_result)
         total_traffic = ex_input_result + ex_output_result + in_output_result + in_input_result
 
         return total_traffic
 
 
     def calc_ex_input(self, broker, topic, tmp_map):
-        return self.env.asso_map[broker][topic] * (tmp_map[broker][topic] * update_rate + (1 - tmp_map[broker][topic] * self.env.lambda_map[topic]))
+        return self.env.asso_map[broker][topic] * (tmp_map[broker][topic] * self.env.asso_map[broker][topic] * update_rate + (1 - tmp_map[broker][topic] * self.env.lambda_map[topic]))
 
 
     def calc_ex_output(self, topic):
@@ -157,16 +161,13 @@ class CacheAlgo:
 
 
     def calc_in_output(self, broker, topic, tmp_map):
-        # n = self.env.brk_lst[broker].get_load()
-        # print(n)
+        n = self.env.brk_lst[broker].get_load()
+        p = (1 - (1 - self.env.top_lst[topic].get_popularity())**n)
+
         # prob_sub = 0
         # for i in range(n):
-        #     print(1/num_broker)
-        #     print(np.random.binomial(i+1, n, 1/num_broker))
-        #     print(1 - (1 - self.topic_lst[topic].get_popularity())**(i+1))
-        #     prob_sub += (np.random.binomial(i+1, n, 1/num_broker) * (1 - (1 - self.topic_lst[topic].get_popularity())**(i+1)))
-        # return prob_sub * self.env.lambda_map[topic] * abs(1 - (self.env.asso_map[broker][topic] + tmp_map[broker][topic]))
-        return 1
+        #     prob_sub += (np.random.binomial(i+1, 1/num_broker, n) * (1 - (1 - self.env.top_lst[topic].get_popularity())**(i+1)))
+        return p * self.env.lambda_map[topic] * abs(1 - (self.env.asso_map[broker][topic] + tmp_map[broker][topic]))
 
 
     def calc_in_input(self, broker, topic, tmp_map):
@@ -210,7 +211,7 @@ class CacheAlgo:
         delay = 0
 
         ex_input = ex_output = in_input = in_output = 0
-        print(f'algorithm: {self.name}// request for {req_top.id} arrives {req_brk.id}')
+        # print(f'algorithm: {self.name}// request for {req_top.id} arrives {req_brk.id}')
 
         if len(cached_svr) != 0:  # If the requested topic is cached in one of the brokers
             hit = 1
@@ -224,7 +225,7 @@ class CacheAlgo:
 
         else:   # If the requested topic is not cached in any broker
             hit = 0
-            print(req_top.id, "is cached in ", req_top.get_svr().id)
+            # print(req_top.id, "is cached in ", req_top.get_svr().id)
             if req_brk.id == topic_svr.id:
                 req_brk.fetch()
                 req_brk.forward(req)
@@ -244,3 +245,15 @@ class CacheAlgo:
             brk.clear()
 
         return ex_input, ex_output, in_input, in_output, hit, delay
+
+    def update(self):
+        cached_items = np.where(self.caching_map == True)[1]
+        cached_items = set(cached_items)
+        # print(self.name, cached_items)
+
+        for item in cached_items:
+            asso_svr = np.where(self.env.asso_map[:, item] == True)[0]
+            # print(self.name, item, asso_svr)
+            for svr in asso_svr:
+                self.env.brk_lst[svr].fetch()
+

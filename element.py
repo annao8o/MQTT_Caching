@@ -86,17 +86,17 @@ class Broker:
 
     def fetch(self):
         self.ex_input += 1
-        print("fetching")
+        # print("fetching")
 
 
     def forward(self, req):
         self.ex_output += 1
-        print("forwarding")
+        # print("forwarding")
         req.change_status("end")
 
 
     def routing(self, target_brk):
-        print("route to ", target_brk.id)
+        # print("route to ", target_brk.id)
         target_brk.rcv_traffic(self)
         self.in_output += 1
 

@@ -123,7 +123,7 @@ class Environment:   # load balancer
                 in_input_lst[idx] += in_input
                 in_output_lst[idx] += in_output
                 hit_lst[idx] += hit
-                delay_lst[idx] += delay
+                # delay_lst[idx] += delay
         return ex_input_lst, ex_output_lst, in_input_lst, in_output_lst, hit_lst, delay_lst
 
 
@@ -131,4 +131,3 @@ class Environment:   # load balancer
         for algo in self.algo_lst:
             # algo.clear()
             algo.caching()
-

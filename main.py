@@ -65,18 +65,39 @@ if __name__ == "__main__":
     # parser.add_argument('--algo', action='store_true',
     #                     help='algorithm name.')
     # args = vars(parser.parse_args())
+    if flag == 1:
+        if os.path.exists(file_path+env_name):
+            env_file = load_file(file_path, env_name)
+            env = env_file['environment']
+            zipf = env_file['zipf']
+        else:
+            zipf = Zipf()
+            zipf.set_env(zipf_param, num_topic)
+            env = Environment(zipf)
+            env_file = {'environment': env, 'zipf': zipf}
+            save_file(file_path, env_name, env_file)
 
-    if os.path.exists(file_path + file_name):
-        integrated_file = load_file(file_path, file_name)
+        if os.path.exists(file_path+req_name):
+            requests = load_file(file_path, req_name)
+        else:
+            requests = make_request(num_broker, arrival_rate, end_time, zipf, env.top_lst, env.sub_lst, env.brk_lst)
+            save_file(file_path, req_name, requests)
 
-    else:
-        zipf = Zipf()
-        zipf.set_env(zipf_param, num_topic)
-        env = Environment(zipf)
-        requests = make_request(num_broker, arrival_rate, end_time, zipf, env.top_lst, env.sub_lst, env.brk_lst)
         env.set_requests(requests)
+        integrated_file = {'requests': requests, 'environment': env}
 
-        integrated_file = {'requests': requests, 'zipf': zipf, 'environment': env}
-        save_file(file_path, file_name, integrated_file)
+    if flag == 0:
+        if os.path.exists(file_path + file_name):
+            integrated_file = load_file(file_path, file_name)
+
+        else:
+            zipf = Zipf()
+            zipf.set_env(zipf_param, num_topic)
+            env = Environment(zipf)
+            requests = make_request(num_broker, arrival_rate, end_time, zipf, env.top_lst, env.sub_lst, env.brk_lst)
+            env.set_requests(requests)
+
+            integrated_file = {'requests': requests, 'zipf': zipf, 'environment': env}
+            save_file(file_path, file_name, integrated_file)
 
     run(integrated_file, algo_lst)
